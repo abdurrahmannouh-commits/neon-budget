@@ -2,18 +2,29 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
+export function adaptSeriesColor(color) {
+  const isLight = document.documentElement.dataset.theme === 'light';
+  if (!isLight) return color;
+  if (color.toLowerCase() === '#e4e4e7') return '#18181b';
+  if (color.toLowerCase() === '#a1a1aa') return '#52525b';
+  return color;
+}
+
 function getThemeColors() {
   const isLight = document.documentElement.dataset.theme === 'light';
   return {
-    grid: isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)',
-    axisText: isLight ? '#64748b' : '#8b9bb4',
-    guideLine: isLight ? 'rgba(15, 23, 42, 0.16)' : 'rgba(255, 255, 255, 0.18)',
-    income: '#10f5a0',
-    incomeDark: '#059669',
-    expense: '#fb7185',
-    expenseDark: '#e11d48',
-    cardBg: isLight ? '#ffffff' : '#0f1626',
-    donutTrack: isLight ? 'rgba(15, 23, 42, 0.07)' : 'rgba(255, 255, 255, 0.06)',
+    grid: isLight ? 'rgba(24, 24, 27, 0.08)' : 'rgba(255, 255, 255, 0.06)',
+    axisText: isLight ? '#71717a' : '#71717a',
+    axisActive: isLight ? '#09090b' : '#fafafa',
+    guideLine: isLight ? 'rgba(24, 24, 27, 0.18)' : 'rgba(255, 255, 255, 0.18)',
+    income: isLight ? '#16a34a' : '#22c55e',
+    incomeFill: isLight ? 'rgba(22, 163, 74, 0.09)' : 'rgba(34, 197, 94, 0.11)',
+    expense: isLight ? '#18181b' : '#e4e4e7',
+    expenseFill: isLight ? 'rgba(24, 24, 27, 0.06)' : 'rgba(228, 228, 231, 0.07)',
+    expenseBar: isLight ? '#3f3f46' : '#52525b',
+    cardBg: isLight ? '#ffffff' : '#111113',
+    donutTrack: isLight ? 'rgba(24, 24, 27, 0.06)' : 'rgba(255, 255, 255, 0.05)',
+    hoverBand: isLight ? 'rgba(24, 24, 27, 0.035)' : 'rgba(255, 255, 255, 0.03)',
   };
 }
 
@@ -39,9 +50,7 @@ export class CashflowChart {
   _bindEvents() {
     this.canvas.addEventListener('mousemove', (e) => {
       const rect = this.canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      this._handlePointer(x, y, rect);
+      this._handlePointer(e.clientX - rect.left, e.clientY - rect.top, rect);
     });
 
     this.canvas.addEventListener('mouseleave', () => {
@@ -65,7 +74,7 @@ export class CashflowChart {
     if (!parent) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const width = Math.max(260, parent.clientWidth);
-    const height = Math.max(220, parent.clientHeight || 270);
+    const height = Math.max(220, parent.clientHeight || 256);
     this.width = width;
     this.height = height;
     this.canvas.width = Math.floor(width * dpr);
@@ -88,17 +97,14 @@ export class CashflowChart {
   _animate() {
     if (this.rafId) cancelAnimationFrame(this.rafId);
     const start = performance.now();
-    const duration = 580;
+    const duration = 340;
 
     const frame = (now) => {
       const t = Math.min(1, (now - start) / duration);
       this.progress = easeOutCubic(t);
       this.draw(this.progress);
-      if (t < 1) {
-        this.rafId = requestAnimationFrame(frame);
-      } else {
-        this.rafId = null;
-      }
+      if (t < 1) this.rafId = requestAnimationFrame(frame);
+      else this.rafId = null;
     };
     this.rafId = requestAnimationFrame(frame);
   }
@@ -115,7 +121,7 @@ export class CashflowChart {
       }
     });
 
-    if (closest !== -1 && minDist < 65) {
+    if (closest !== -1 && minDist < 68) {
       if (this.hoverIndex !== closest) {
         this.hoverIndex = closest;
         this.draw(1);
@@ -140,25 +146,25 @@ export class CashflowChart {
 
     this.tooltipEl.innerHTML = `
       <div class="tt-title">${label}</div>
-      <div class="tt-row"><span class="tt-dot income"></span><span>${this.labels.income}</span><strong>${this.formatMoney(item.income)}</strong></div>
-      <div class="tt-row"><span class="tt-dot expense"></span><span>${this.labels.expense}</span><strong>${this.formatMoney(item.expense)}</strong></div>
+      <div class="tt-row"><span class="tt-key"><i class="tt-dot income"></i>${this.labels.income}</span><strong>${this.formatMoney(item.income)}</strong></div>
+      <div class="tt-row"><span class="tt-key"><i class="tt-dot expense"></i>${this.labels.expense}</span><strong>${this.formatMoney(item.expense)}</strong></div>
       <div class="tt-divider"></div>
       <div class="tt-row"><span>${this.labels.net}</span><strong class="${net >= 0 ? 'pos' : 'neg'}">${netSign}${this.formatMoney(net)}</strong></div>
     `;
 
     this.tooltipEl.classList.add('visible');
-    const ttWidth = this.tooltipEl.offsetWidth || 170;
+    const ttWidth = this.tooltipEl.offsetWidth || 180;
     const ttHeight = this.tooltipEl.offsetHeight || 100;
     let left = x + 16;
     if (left + ttWidth > rect.width - 8) left = x - ttWidth - 16;
     left = Math.max(8, left);
-    let top = Math.max(8, Math.min(y - ttHeight / 2, rect.height - ttHeight - 8));
+    const top = Math.max(8, Math.min(y - ttHeight / 2, rect.height - ttHeight - 8));
 
     this.tooltipEl.style.transform = `translate(${left}px, ${top}px)`;
   }
 
   _drawSmoothPath(ctx, pts) {
-    if (pts.length === 0) return;
+    if (!pts.length) return;
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
     for (let i = 0; i < pts.length - 1; i += 1) {
@@ -172,41 +178,39 @@ export class CashflowChart {
   draw(p = 1) {
     const ctx = this.ctx;
     const width = this.width || 500;
-    const height = this.height || 260;
+    const height = this.height || 256;
     const colors = getThemeColors();
-    const isLight = document.documentElement.dataset.theme === 'light';
 
     ctx.clearRect(0, 0, width, height);
     if (!this.data.length) return;
 
-    const pad = { top: 20, right: 20, bottom: 34, left: 56 };
+    const pad = { top: 16, right: 16, bottom: 30, left: 48 };
     const chartW = width - pad.left - pad.right;
     const chartH = height - pad.top - pad.bottom;
 
-    const maxRaw = Math.max(
-      100,
-      ...this.data.map((d) => Math.max(d.income, d.expense))
-    );
+    const maxRaw = Math.max(100, ...this.data.map((d) => Math.max(d.income, d.expense)));
     const stepBase = Math.pow(10, Math.floor(Math.log10(maxRaw)));
     const maxVal = Math.ceil((maxRaw * 1.15) / (stepBase / 2)) * (stepBase / 2);
 
-    // Horizontal grid & Y labels
     const ticks = 4;
-    ctx.font = '500 11px Inter, system-ui, sans-serif';
+    ctx.font = '500 11px ui-monospace, SFMono-Regular, Menlo, monospace';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
 
     for (let i = 0; i <= ticks; i += 1) {
       const ratio = i / ticks;
-      const y = pad.top + chartH - ratio * chartH;
+      const y = Math.round(pad.top + chartH - ratio * chartH) + 0.5;
       const val = maxVal * ratio;
 
+      ctx.save();
       ctx.strokeStyle = colors.grid;
       ctx.lineWidth = 1;
+      if (i > 0) ctx.setLineDash([3, 3]);
       ctx.beginPath();
       ctx.moveTo(pad.left, y);
       ctx.lineTo(width - pad.right, y);
       ctx.stroke();
+      ctx.restore();
 
       ctx.fillStyle = colors.axisText;
       const compact = val >= 1000 ? `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k` : `${Math.round(val)}`;
@@ -216,7 +220,6 @@ export class CashflowChart {
     const n = this.data.length;
     const baseY = pad.top + chartH;
 
-    // Calculate point positions
     this.points = this.data.map((d, i) => {
       const x =
         this.mode === 'bar'
@@ -229,60 +232,44 @@ export class CashflowChart {
       return { x, incY, expY, data: d };
     });
 
-    // X-axis month labels
+    // X-axis labels
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     this.points.forEach((pt, i) => {
       const [, mNum] = pt.data.month.split('-').map(Number);
       const label = this.monthNames[mNum - 1] || pt.data.month;
-      ctx.fillStyle = i === this.hoverIndex ? (isLight ? '#0f172a' : '#f8fafc') : colors.axisText;
-      ctx.font = i === this.hoverIndex ? '600 12px Inter, system-ui, sans-serif' : '500 11px Inter, system-ui, sans-serif';
-      ctx.fillText(label, pt.x, baseY + 11);
+      ctx.fillStyle = i === this.hoverIndex ? colors.axisActive : colors.axisText;
+      ctx.font = i === this.hoverIndex
+        ? '600 11px ui-monospace, SFMono-Regular, Menlo, monospace'
+        : '500 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+      ctx.fillText(label, pt.x, baseY + 10);
     });
 
-    const incColor = isLight ? colors.incomeDark : colors.income;
-    const expColor = isLight ? colors.expenseDark : colors.expense;
-
     if (this.mode === 'bar') {
-      const groupW = Math.min(54, (chartW / n) * 0.58);
-      const barW = Math.max(8, (groupW - 6) / 2);
+      const groupW = Math.min(48, (chartW / n) * 0.52);
+      const barW = Math.max(8, (groupW - 4) / 2);
 
       this.points.forEach((pt, i) => {
         const isHover = i === this.hoverIndex;
-        const alpha = this.hoverIndex === -1 || isHover ? 1 : 0.45;
+        const alpha = this.hoverIndex === -1 || isHover ? 1 : 0.42;
         ctx.save();
         ctx.globalAlpha = alpha;
 
         if (isHover) {
-          ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.04)' : 'rgba(255, 255, 255, 0.04)';
-          this._roundRect(ctx, pt.x - groupW / 2 - 6, pad.top, groupW + 12, chartH, 10);
-          ctx.fill();
+          ctx.fillStyle = colors.hoverBand;
+          ctx.fillRect(pt.x - groupW / 2 - 8, pad.top, groupW + 16, chartH);
         }
 
         // Income bar
         const incH = Math.max(2, baseY - pt.incY);
-        const gInc = ctx.createLinearGradient(0, pt.incY, 0, baseY);
-        gInc.addColorStop(0, incColor);
-        gInc.addColorStop(1, isLight ? 'rgba(5, 150, 105, 0.25)' : 'rgba(16, 245, 160, 0.22)');
-        ctx.fillStyle = gInc;
-        if (isHover && !isLight) {
-          ctx.shadowColor = 'rgba(16, 245, 160, 0.5)';
-          ctx.shadowBlur = 14;
-        }
-        this._roundRect(ctx, pt.x - barW - 3, pt.incY, barW, incH, [6, 6, 2, 2]);
+        ctx.fillStyle = colors.income;
+        this._roundRect(ctx, pt.x - barW - 2, pt.incY, barW, incH, [3, 3, 0, 0]);
         ctx.fill();
 
         // Expense bar
         const expH = Math.max(2, baseY - pt.expY);
-        const gExp = ctx.createLinearGradient(0, pt.expY, 0, baseY);
-        gExp.addColorStop(0, expColor);
-        gExp.addColorStop(1, isLight ? 'rgba(225, 29, 72, 0.25)' : 'rgba(251, 113, 133, 0.22)');
-        ctx.fillStyle = gExp;
-        if (isHover && !isLight) {
-          ctx.shadowColor = 'rgba(251, 113, 133, 0.5)';
-          ctx.shadowBlur = 14;
-        }
-        this._roundRect(ctx, pt.x + 3, pt.expY, barW, expH, [6, 6, 2, 2]);
+        ctx.fillStyle = colors.expenseBar;
+        this._roundRect(ctx, pt.x + 2, pt.expY, barW, expH, [3, 3, 0, 0]);
         ctx.fill();
         ctx.restore();
       });
@@ -290,10 +277,10 @@ export class CashflowChart {
       const incPts = this.points.map((pt) => ({ x: pt.x, y: pt.incY }));
       const expPts = this.points.map((pt) => ({ x: pt.x, y: pt.expY }));
 
-      // Income area fill
+      // Subtle income area tint
       const gInc = ctx.createLinearGradient(0, pad.top, 0, baseY);
-      gInc.addColorStop(0, isLight ? 'rgba(5, 150, 105, 0.24)' : 'rgba(16, 245, 160, 0.28)');
-      gInc.addColorStop(1, 'rgba(16, 245, 160, 0)');
+      gInc.addColorStop(0, colors.incomeFill);
+      gInc.addColorStop(1, 'rgba(34, 197, 94, 0)');
       this._drawSmoothPath(ctx, incPts);
       ctx.lineTo(incPts[incPts.length - 1].x, baseY);
       ctx.lineTo(incPts[0].x, baseY);
@@ -301,10 +288,10 @@ export class CashflowChart {
       ctx.fillStyle = gInc;
       ctx.fill();
 
-      // Expense area fill
+      // Subtle expense area tint
       const gExp = ctx.createLinearGradient(0, pad.top, 0, baseY);
-      gExp.addColorStop(0, isLight ? 'rgba(225, 29, 72, 0.2)' : 'rgba(251, 113, 133, 0.24)');
-      gExp.addColorStop(1, 'rgba(251, 113, 133, 0)');
+      gExp.addColorStop(0, colors.expenseFill);
+      gExp.addColorStop(1, 'rgba(228, 228, 231, 0)');
       this._drawSmoothPath(ctx, expPts);
       ctx.lineTo(expPts[expPts.length - 1].x, baseY);
       ctx.lineTo(expPts[0].x, baseY);
@@ -312,83 +299,50 @@ export class CashflowChart {
       ctx.fillStyle = gExp;
       ctx.fill();
 
-      // Income glowing line
-      ctx.save();
+      // Crisp lines (zero glow)
       this._drawSmoothPath(ctx, incPts);
-      ctx.strokeStyle = incColor;
-      ctx.lineWidth = 2.6;
-      if (!isLight) {
-        ctx.shadowColor = 'rgba(16, 245, 160, 0.55)';
-        ctx.shadowBlur = 10;
-      }
+      ctx.strokeStyle = colors.income;
+      ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.restore();
 
-      // Expense glowing line
       ctx.save();
       this._drawSmoothPath(ctx, expPts);
-      ctx.strokeStyle = expColor;
-      ctx.lineWidth = 2.6;
-      if (!isLight) {
-        ctx.shadowColor = 'rgba(251, 113, 133, 0.55)';
-        ctx.shadowBlur = 10;
-      }
+      ctx.strokeStyle = colors.expense;
+      ctx.lineWidth = 1.75;
+      ctx.setLineDash([5, 4]);
       ctx.stroke();
       ctx.restore();
 
-      // Hover vertical guide & active dots
+      // Hover crosshair & crisp ring points
       if (this.hoverIndex >= 0 && this.points[this.hoverIndex]) {
         const hp = this.points[this.hoverIndex];
         ctx.save();
         ctx.strokeStyle = colors.guideLine;
-        ctx.setLineDash([4, 4]);
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(hp.x, pad.top);
-        ctx.lineTo(hp.x, baseY);
+        ctx.moveTo(Math.round(hp.x) + 0.5, pad.top);
+        ctx.lineTo(Math.round(hp.x) + 0.5, baseY);
         ctx.stroke();
         ctx.restore();
 
-        this._drawGlowDot(ctx, hp.x, hp.incY, incColor, colors.cardBg);
-        this._drawGlowDot(ctx, hp.x, hp.expY, expColor, colors.cardBg);
-      } else {
-        // Subtle data dots
-        this.points.forEach((pt) => {
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.incY, 3, 0, Math.PI * 2);
-          ctx.fillStyle = incColor;
-          ctx.fill();
-
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.expY, 3, 0, Math.PI * 2);
-          ctx.fillStyle = expColor;
-          ctx.fill();
-        });
+        this._drawPoint(ctx, hp.x, hp.incY, colors.income, colors.cardBg);
+        this._drawPoint(ctx, hp.x, hp.expY, colors.expense, colors.cardBg);
       }
     }
   }
 
-  _drawGlowDot(ctx, x, y, color, centerBg) {
-    ctx.save();
+  _drawPoint(ctx, x, y, color, centerBg) {
     ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.22;
-    ctx.fill();
-    ctx.restore();
-
-    ctx.beginPath();
-    ctx.arc(x, y, 4.8, 0, Math.PI * 2);
+    ctx.arc(x, y, 4.2, 0, Math.PI * 2);
     ctx.fillStyle = centerBg;
     ctx.fill();
-    ctx.lineWidth = 2.6;
+    ctx.lineWidth = 2;
     ctx.strokeStyle = color;
     ctx.stroke();
   }
 
   _roundRect(ctx, x, y, w, h, r) {
-    const radii = Array.isArray(r) ? r : [r, r, r, r];
-    const [tl, tr, br, bl] = radii.map((val) => Math.min(val, w / 2, h / 2));
+    const [tl, tr, br, bl] = (Array.isArray(r) ? r : [r, r, r, r]).map((v) => Math.min(v, w / 2, h / 2));
     ctx.beginPath();
     ctx.moveTo(x + tl, y);
     ctx.lineTo(x + w - tr, y);
@@ -423,9 +377,9 @@ export class CategoryDonutChart {
       const y = e.clientY - rect.top - rect.height / 2;
       const dist = Math.hypot(x, y);
       const outer = Math.min(rect.width, rect.height) * 0.44;
-      const inner = outer * 0.62;
+      const inner = outer * 0.68;
 
-      if (dist < inner || dist > outer + 10 || !this.segments.length) {
+      if (dist < inner || dist > outer + 8 || !this.segments.length) {
         this.setHover(-1);
         return;
       }
@@ -444,9 +398,7 @@ export class CategoryDonutChart {
       this.setHover(found);
     });
 
-    this.canvas.addEventListener('mouseleave', () => {
-      this.setHover(-1);
-    });
+    this.canvas.addEventListener('mouseleave', () => this.setHover(-1));
   }
 
   setHover(index) {
@@ -459,7 +411,7 @@ export class CategoryDonutChart {
   }
 
   update(items) {
-    const size = 216;
+    const size = 204;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.size = size;
     this.canvas.width = size * dpr;
@@ -470,12 +422,12 @@ export class CategoryDonutChart {
 
     const total = items.reduce((acc, it) => acc + it.amount, 0);
     let cursor = -Math.PI / 2;
-    const gap = items.length > 1 ? 0.032 : 0;
+    const gap = items.length > 1 ? 0.022 : 0;
 
     this.segments = items.map((it) => {
       const span = total > 0 ? (it.amount / total) * Math.PI * 2 : 0;
       const startAngle = cursor + gap / 2;
-      const endAngle = cursor + Math.max(0.02, span - gap / 2);
+      const endAngle = cursor + Math.max(0.015, span - gap / 2);
       cursor += span;
       return { ...it, startAngle, endAngle };
     });
@@ -487,7 +439,7 @@ export class CategoryDonutChart {
   _animate() {
     if (this.rafId) cancelAnimationFrame(this.rafId);
     const start = performance.now();
-    const duration = 620;
+    const duration = 380;
     const frame = (now) => {
       const t = Math.min(1, (now - start) / duration);
       this.progress = easeOutCubic(t);
@@ -500,17 +452,15 @@ export class CategoryDonutChart {
 
   draw(p = 1) {
     const ctx = this.ctx;
-    const size = this.size || 216;
+    const size = this.size || 204;
     const cx = size / 2;
     const cy = size / 2;
-    const radius = size * 0.37;
-    const lineWidth = 22;
+    const radius = size * 0.39;
+    const lineWidth = 14;
     const colors = getThemeColors();
-    const isLight = document.documentElement.dataset.theme === 'light';
 
     ctx.clearRect(0, 0, size, size);
 
-    // Track ring
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.strokeStyle = colors.donutTrack;
@@ -529,15 +479,11 @@ export class CategoryDonutChart {
 
       ctx.save();
       ctx.beginPath();
-      ctx.arc(cx, cy, isHover ? radius + 4 : radius, seg.startAngle, end);
-      ctx.strokeStyle = seg.color;
-      ctx.lineWidth = isHover ? lineWidth + 4 : lineWidth;
-      ctx.lineCap = 'round';
-      ctx.globalAlpha = isDimmed ? 0.35 : 1;
-      if (isHover && !isLight) {
-        ctx.shadowColor = seg.color;
-        ctx.shadowBlur = 16;
-      }
+      ctx.arc(cx, cy, isHover ? radius + 2.5 : radius, seg.startAngle, end);
+      ctx.strokeStyle = adaptSeriesColor(seg.color);
+      ctx.lineWidth = isHover ? lineWidth + 3 : lineWidth;
+      ctx.lineCap = 'butt';
+      ctx.globalAlpha = isDimmed ? 0.28 : 1;
       ctx.stroke();
       ctx.restore();
     });
@@ -546,81 +492,21 @@ export class CategoryDonutChart {
 
 export function renderSparklineSvg(values, color) {
   if (!values || values.length < 2) return '';
-  const w = 88;
-  const h = 30;
+  const w = 72;
+  const h = 24;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
 
   const pts = values.map((v, i) => {
     const x = (i / (values.length - 1)) * (w - 4) + 2;
-    const y = h - 4 - ((v - min) / span) * (h - 8);
+    const y = h - 3 - ((v - min) / span) * (h - 6);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
 
-  const gradId = `sg-${Math.random().toString(36).slice(2, 8)}`;
-  const areaPts = `2,${h} ${pts.join(' ')} ${w - 2},${h}`;
-
   return `
     <svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" class="sparkline-svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${color}" stop-opacity="0.32" />
-          <stop offset="100%" stop-color="${color}" stop-opacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points="${areaPts}" fill="url(#${gradId})" />
-      <polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
   `;
-}
-
-export function launchConfetti() {
-  const canvas = document.createElement('canvas');
-  canvas.className = 'confetti-canvas';
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  const palette = ['#10f5a0', '#38bdf8', '#a855f7', '#fbbf24', '#fb7185'];
-  const particles = Array.from({ length: 80 }, () => ({
-    x: window.innerWidth / 2 + (Math.random() - 0.5) * 160,
-    y: window.innerHeight * 0.45,
-    vx: (Math.random() - 0.5) * 14,
-    vy: -Math.random() * 14 - 4,
-    size: Math.random() * 7 + 4,
-    color: palette[Math.floor(Math.random() * palette.length)],
-    rot: Math.random() * Math.PI * 2,
-    vrot: (Math.random() - 0.5) * 0.25,
-    life: 1,
-  }));
-
-  const tick = () => {
-    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    let alive = 0;
-    for (const p of particles) {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.36;
-      p.vx *= 0.99;
-      p.rot += p.vrot;
-      p.life -= 0.014;
-      if (p.life > 0) {
-        alive += 1;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.globalAlpha = Math.max(0, p.life);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
-        ctx.restore();
-      }
-    }
-    if (alive > 0) requestAnimationFrame(tick);
-    else canvas.remove();
-  };
-  requestAnimationFrame(tick);
 }

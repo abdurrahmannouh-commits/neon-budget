@@ -1,18 +1,20 @@
-# NeonBudget — Personal Finance & Budget App
+# Mizan — Personal Finance Ledger
 
-A sleek dark-mode personal budget application built with zero external dependencies, featuring glassmorphism design, smooth animations, interactive HTML5 Canvas charts, and full **Somali (Af-Soomaali)** & **English** support.
+A restrained, matte-dark personal finance and budget application built with zero external dependencies, inspired by Linear and Mercury Bank. Designed with strict typographic hierarchy, hairline `1px` architecture, monochrome stroke icons, tabular monospace numerals, and interactive high-DPI Canvas charts.
+
+## Design Principles (Zero AI Slop)
+- **Matte Neutral Surfaces:** `#09090B` canvas, `#111113` panels, and crisp `#1F1F23` hairline dividers (plus Swiss-editorial Light Mode).
+- **90/10 Color Discipline:** High-contrast monochrome UI chrome; semantic emerald/crimson reserved strictly for financial deltas and alerts.
+- **Unified Monochrome SVG Icons:** Custom `1.6px`-stroke SVG icon system (`js/icons.js`) — zero emojis, zero gradients, zero blur orbs.
+- **Tabular Monospace Numerals:** Every currency amount, date, percentage, and chart axis aligns cleanly.
+- **Purposeful Motion:** Fast `140ms` state transitions and smooth numeric updates without distracting visual gimmicks.
 
 ## Features
-- **Dark Mode First (+ Light Mode Toggle):** Deep obsidian surfaces, ambient animated aurora glow, and translucent glass cards.
-- **Interactive Charts (Custom High-DPI Canvas & SVG):**
-  - **6-Month Cash Flow Chart:** Switch smoothly between glowing bezier **Area** and rounded **Bar** views with floating hover tooltips.
-  - **Category Spending Donut Chart:** Animated radial sweep with slice expansion on hover and synchronized interactive legend.
-  - **KPI Sparklines & Savings Rate Gauge:** Animated counting KPIs with trend sparklines and delta badges.
-- **Category Budget Limits:** Animated shimmer progress bars with warning (≥80%) and over-budget (≥100%) indicators.
-- **Savings Goals:** Track financial milestones, contribute funds, and trigger a confetti celebration when hitting 100%.
-- **Transactions Ledger:** Instant search, type/category/month filters, sorting, edit/delete with **Undo** toast, and **CSV Export**.
-- **Keyboard Shortcuts:** Press `N` to quick-add a transaction, `Esc` to close modals.
-- **Bilingual (SO / EN) & Multi-Currency:** Switch between Af-Soomaali & English and USD / EUR / GBP / SOS.
+- **Interactive Charts:** 6-month Cash Flow (Line / Bar toggle with hover crosshair tooltip) & Category Spending Donut with synchronized legend.
+- **Monthly Budget Thresholds:** Category limits with clean warning (≥80%) and over-limit (≥100%) indicators.
+- **Savings Goals:** Track dedicated reserves and allocate funds.
+- **Transactions Ledger:** Instant search, filters, sorting, Undo delete, CSV export, and keyboard shortcut `N` to add entries.
+- **Bilingual (Af-Soomaali / English)** & Multi-Currency (`USD`, `EUR`, `GBP`, `SOS`).
 
 ## Run Locally
 ```bash

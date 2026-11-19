@@ -1,4 +1,5 @@
 import { TRANSLATIONS, CURRENCIES } from './i18n.js';
+import { renderIcon, GOAL_ICONS } from './icons.js';
 import {
   CATEGORIES,
   CATEGORY_MAP,
@@ -15,7 +16,7 @@ import {
   CashflowChart,
   CategoryDonutChart,
   renderSparklineSvg,
-  launchConfetti,
+  adaptSeriesColor,
 } from './charts.js';
 
 const store = new BudgetStore();
@@ -31,7 +32,7 @@ const uiState = {
     sort: 'newest',
   },
   txModalType: 'expense',
-  selectedGoalEmoji: '🎯',
+  selectedGoalIcon: 'target',
   prevNumbers: {
     balance: 0,
     income: 0,
@@ -89,7 +90,7 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-function animateNumber(el, from, to, formatter, duration = 480) {
+function animateNumber(el, from, to, formatter, duration = 300) {
   if (!el) return;
   if (el._raf) cancelAnimationFrame(el._raf);
   const start = performance.now();
@@ -129,10 +130,10 @@ function showToast(message, { undoAction = null } = {}) {
   stack.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    toast.style.transition = 'all 0.25s ease';
-    setTimeout(() => toast.remove(), 260);
-  }, undoAction ? 5000 : 3200);
+    toast.style.transform = 'translateY(6px)';
+    toast.style.transition = 'all 0.18s ease';
+    setTimeout(() => toast.remove(), 200);
+  }, undoAction ? 4800 : 2800);
 }
 
 function applyThemeAndI18n() {
@@ -197,7 +198,7 @@ function populateCategoryFilters() {
     catFilter.innerHTML = [
       `<option value="all">${escapeHtml(t('allCategories'))}</option>`,
       ...CATEGORIES.map(
-        (c) => `<option value="${c.id}">${c.icon} ${escapeHtml(tCat(c.id))}</option>`
+        (c) => `<option value="${c.id}">${escapeHtml(tCat(c.id))}</option>`
       ),
     ].join('');
     catFilter.value = current;
@@ -210,24 +211,48 @@ function populateTxModalCategories(type, selectedId = null) {
   if (!select) return;
   const filtered = CATEGORIES.filter((c) => c.type === type);
   select.innerHTML = filtered
-    .map((c) => `<option value="${c.id}">${c.icon} ${escapeHtml(tCat(c.id))}</option>`)
+    .map((c) => `<option value="${c.id}">${escapeHtml(tCat(c.id))}</option>`)
     .join('');
   if (selectedId && filtered.some((c) => c.id === selectedId)) {
     select.value = selectedId;
   }
 }
 
+function renderGoalIconPicker() {
+  const container = document.getElementById('goalIconPicker');
+  if (!container) return;
+  container.innerHTML = GOAL_ICONS.map(
+    (name) => `
+      <button type="button" class="icon-opt ${name === uiState.selectedGoalIcon ? 'active' : ''}" data-goal-icon="${name}" aria-label="${name}">
+        ${renderIcon(name, 16)}
+      </button>
+    `
+  ).join('');
+
+  container.querySelectorAll('[data-goal-icon]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      uiState.selectedGoalIcon = btn.dataset.goalIcon;
+      container.querySelectorAll('[data-goal-icon]').forEach((b) =>
+        b.classList.toggle('active', b === btn)
+      );
+    });
+  });
+}
+
 function renderSavingsRing(percent) {
+  const isLight = document.documentElement.dataset.theme === 'light';
+  const track = isLight ? '#e4e4e7' : '#27272a';
+  const stroke = isLight ? '#09090b' : '#fafafa';
   const clamped = Math.max(0, Math.min(100, percent));
-  const r = 16;
+  const r = 13;
   const circ = 2 * Math.PI * r;
   const offset = circ - (clamped / 100) * circ;
   return `
-    <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">
-      <circle cx="20" cy="20" r="${r}" fill="none" stroke="rgba(168,85,247,0.18)" stroke-width="4" />
-      <circle cx="20" cy="20" r="${r}" fill="none" stroke="#a855f7" stroke-width="4"
-        stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
-        transform="rotate(-90 20 20)" style="transition: stroke-dashoffset 0.7s cubic-bezier(0.22,1,0.36,1)" />
+    <svg viewBox="0 0 34 34" width="34" height="34" aria-hidden="true">
+      <circle cx="17" cy="17" r="${r}" fill="none" stroke="${track}" stroke-width="3" />
+      <circle cx="17" cy="17" r="${r}" fill="none" stroke="${stroke}" stroke-width="3"
+        stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+        transform="rotate(-90 17 17)" style="transition: stroke-dashoffset 0.45s cubic-bezier(0.2,0,0,1)" />
     </svg>
   `;
 }
@@ -237,8 +262,8 @@ function renderDashboard() {
   const monthKey = uiState.selectedMonth;
   const summary = computeSummary(transactions, monthKey);
   const series = computeCashflowSeries(transactions, lastSixMonths);
+  const isLight = settings.theme === 'light';
 
-  // Animate KPI values
   animateNumber(
     document.getElementById('kpiBalance'),
     uiState.prevNumbers.balance,
@@ -271,51 +296,51 @@ function renderDashboard() {
     savingsRate: summary.savingsRate,
   };
 
-  // KPI badges
   const netBadge = document.getElementById('kpiNetBadge');
   netBadge.textContent = formatMoney(summary.netCashflow, { signed: true });
-  netBadge.className = `kpi-badge ${summary.netCashflow >= 0 ? 'pos' : 'neg'}`;
+  netBadge.className = `delta-badge ${summary.netCashflow >= 0 ? 'pos' : 'neg'}`;
   document.getElementById('kpiBalanceSub').textContent = `${t('netCashflow')}: ${formatMoney(summary.netCashflow, { signed: true })}`;
 
   const incDeltaEl = document.getElementById('kpiIncomeDelta');
   if (summary.incomeDelta === null) {
     incDeltaEl.textContent = '—';
-    incDeltaEl.className = 'kpi-badge neutral';
+    incDeltaEl.className = 'delta-badge neutral';
   } else {
     const sign = summary.incomeDelta >= 0 ? '+' : '';
     incDeltaEl.textContent = `${sign}${summary.incomeDelta.toFixed(1)}%`;
-    incDeltaEl.className = `kpi-badge ${summary.incomeDelta >= 0 ? 'pos' : 'neg'}`;
+    incDeltaEl.className = `delta-badge ${summary.incomeDelta >= 0 ? 'pos' : 'neg'}`;
   }
 
   const expDeltaEl = document.getElementById('kpiExpenseDelta');
   if (summary.expenseDelta === null) {
     expDeltaEl.textContent = '—';
-    expDeltaEl.className = 'kpi-badge neutral';
+    expDeltaEl.className = 'delta-badge neutral';
   } else {
     const sign = summary.expenseDelta >= 0 ? '+' : '';
     expDeltaEl.textContent = `${sign}${summary.expenseDelta.toFixed(1)}%`;
-    // Lower expense is positive!
-    expDeltaEl.className = `kpi-badge ${summary.expenseDelta <= 0 ? 'pos' : 'neg'}`;
+    expDeltaEl.className = `delta-badge ${summary.expenseDelta <= 0 ? 'pos' : 'neg'}`;
   }
 
-  document.getElementById('kpiTxCountBadge').textContent = `${summary.txCount} tx`;
+  document.getElementById('kpiTxCountBadge').textContent = `${summary.txCount}`;
   document.getElementById('savingsMiniRing').innerHTML = renderSavingsRing(summary.savingsRate);
 
-  // Sparklines
+  // Subtle monochrome + semantic sparklines
   const balanceCurve = [];
   let running = 0;
   series.forEach((s) => {
     running += s.income - s.expense;
     balanceCurve.push(running);
   });
-  document.getElementById('sparkBalance').innerHTML = renderSparklineSvg(balanceCurve, '#38bdf8');
+  const neutralStroke = isLight ? '#52525b' : '#a1a1aa';
+  const posStroke = isLight ? '#16a34a' : '#22c55e';
+  document.getElementById('sparkBalance').innerHTML = renderSparklineSvg(balanceCurve, neutralStroke);
   document.getElementById('sparkIncome').innerHTML = renderSparklineSvg(
     series.map((s) => s.income),
-    '#10f5a0'
+    posStroke
   );
   document.getElementById('sparkExpense').innerHTML = renderSparklineSvg(
     series.map((s) => s.expense),
-    '#fb7185'
+    neutralStroke
   );
 
   // Cashflow Chart
@@ -338,25 +363,24 @@ function renderDashboard() {
   updateDonutCenter(null);
   renderDonutLegend(breakdown);
 
-  // Insights strip
+  // Insights Strip
   document.getElementById('insightDailySpend').textContent = formatMoney(summary.avgDailySpend);
   if (summary.topCategory) {
-    const meta = CATEGORY_MAP[summary.topCategory];
-    document.getElementById('insightTopCat').textContent = `${meta?.icon || ''} ${tCat(summary.topCategory)} (${formatMoney(summary.topCategoryAmount)})`;
+    document.getElementById('insightTopCat').textContent = `${tCat(summary.topCategory)} — ${formatMoney(summary.topCategoryAmount)}`;
   } else {
     document.getElementById('insightTopCat').textContent = '—';
   }
   const netFlowEl = document.getElementById('insightNetFlow');
   netFlowEl.textContent = formatMoney(summary.netCashflow, { signed: true });
-  netFlowEl.style.color = summary.netCashflow >= 0 ? 'var(--neon-emerald)' : 'var(--neon-rose)';
+  netFlowEl.style.color = summary.netCashflow >= 0 ? 'var(--pos)' : 'var(--neg)';
 
-  // Dashboard Budget Health (top 5 by ratio)
+  // Dashboard Budget Limits
   const budgetItems = computeBudgetProgress(transactions, budgets, monthKey)
     .sort((a, b) => b.ratio - a.ratio)
     .slice(0, 5);
   renderBudgetBars(document.getElementById('dashboardBudgetsList'), budgetItems);
 
-  // Recent Transactions (top 6)
+  // Recent Activity
   const recent = filterTransactions(transactions, {
     month: monthKey,
     sort: 'newest',
@@ -370,15 +394,13 @@ function updateDonutCenter(hoveredSeg) {
   const pctEl = document.getElementById('donutCenterPct');
 
   if (hoveredSeg) {
-    labelEl.textContent = `${hoveredSeg.icon} ${tCat(hoveredSeg.categoryId)}`;
+    labelEl.textContent = tCat(hoveredSeg.categoryId);
     valEl.textContent = formatMoney(hoveredSeg.amount);
     pctEl.textContent = `${hoveredSeg.percentage.toFixed(1)}%`;
-    pctEl.style.color = hoveredSeg.color;
   } else {
     labelEl.textContent = t('totalSpent');
     valEl.textContent = formatMoney(uiState.currentDonutTotal);
     pctEl.textContent = uiState.currentDonutTotal > 0 ? '' : t('noSpendingData');
-    pctEl.style.color = 'var(--text-muted)';
   }
 }
 
@@ -394,8 +416,8 @@ function renderDonutLegend(items) {
       (it, idx) => `
       <li class="donut-legend-item" data-seg-idx="${idx}">
         <span class="legend-left">
-          <span class="legend-swatch" style="background:${it.color}"></span>
-          <span class="legend-name">${it.icon} ${escapeHtml(tCat(it.categoryId))}</span>
+          <span class="legend-swatch" style="background:${adaptSeriesColor(it.color)}"></span>
+          <span class="legend-name">${escapeHtml(tCat(it.categoryId))}</span>
         </span>
         <span class="legend-val">${it.percentage.toFixed(0)}%</span>
       </li>
@@ -422,11 +444,14 @@ function renderBudgetBars(container, items) {
       return `
         <div class="budget-row">
           <div class="budget-row-top">
-            <span class="budget-cat-title"><span>${item.icon}</span> ${escapeHtml(tCat(item.categoryId))}</span>
+            <span class="budget-cat-title">
+              <span class="cat-icon-inline">${renderIcon(item.icon, 14)}</span>
+              ${escapeHtml(tCat(item.categoryId))}
+            </span>
             <span class="budget-amounts"><strong>${formatMoney(item.spent)}</strong> / ${formatMoney(item.limit)}</span>
           </div>
           <div class="progress-track">
-            <div class="progress-fill ${statusClass}" data-target-width="${item.percent}%" style="background:${item.color}"></div>
+            <div class="progress-fill ${statusClass}" data-target-width="${item.percent}%"></div>
           </div>
           <div class="budget-row-foot">
             <span>${item.rawPercent}% ${escapeHtml(t('used'))}</span>
@@ -449,7 +474,7 @@ function renderFullBudgets() {
   const items = computeBudgetProgress(store.state.transactions, store.state.budgets, uiState.selectedMonth);
 
   container.innerHTML = items
-    .map((item, idx) => {
+    .map((item) => {
       const statusClass = item.status === 'over' ? 'status-over' : item.status === 'warn' ? 'status-warn' : '';
       const footMsg =
         item.remaining >= 0
@@ -457,13 +482,13 @@ function renderFullBudgets() {
           : `<span class="over">${formatMoney(Math.abs(item.remaining))} ${t('overBudget')}</span>`;
 
       return `
-        <article class="glass-card budget-card" style="--stagger: ${idx}">
+        <article class="panel budget-card">
           <div class="budget-card-head">
             <div class="budget-cat-title">
-              <span class="cat-badge-lg" style="background:${item.color}22; border: 1px solid ${item.color}44">${item.icon}</span>
+              <span class="cat-badge-lg">${renderIcon(item.icon, 16)}</span>
               <div>
                 <strong>${escapeHtml(tCat(item.categoryId))}</strong>
-                <div class="card-subtitle">${item.rawPercent}% ${escapeHtml(t('used'))}</div>
+                <div class="panel-subtitle mono">${item.rawPercent}% ${escapeHtml(t('used'))}</div>
               </div>
             </div>
             <button class="edit-limit-btn" data-edit-budget="${item.categoryId}">${escapeHtml(t('editLimit'))}</button>
@@ -475,7 +500,7 @@ function renderFullBudgets() {
               <span class="budget-amounts">${formatMoney(item.limit)}</span>
             </div>
             <div class="progress-track">
-              <div class="progress-fill ${statusClass}" data-target-width="${item.percent}%" style="background:${item.color}"></div>
+              <div class="progress-fill ${statusClass}" data-target-width="${item.percent}%"></div>
             </div>
             <div class="budget-row-foot">
               <span>${footMsg}</span>
@@ -505,19 +530,19 @@ function renderTxList(container, items, { compact = false } = {}) {
 
   container.innerHTML = items
     .map((tx) => {
-      const cat = CATEGORY_MAP[tx.category] || { icon: '💳', color: '#94a3b8' };
+      const cat = CATEGORY_MAP[tx.category] || { icon: 'target' };
       const sign = tx.type === 'income' ? '+' : '-';
       return `
         <div class="tx-item" data-tx-id="${tx.id}">
           <div class="tx-left">
-            <span class="tx-icon" style="background:${cat.color}20; border: 1px solid ${cat.color}38">${cat.icon}</span>
+            <span class="tx-icon">${renderIcon(cat.icon, 15)}</span>
             <div class="tx-info">
               <div class="tx-title">${escapeHtml(tx.title)}</div>
               <div class="tx-meta">
                 <span>${escapeHtml(tCat(tx.category))}</span>
-                <span>•</span>
-                <span>${escapeHtml(tx.date)}</span>
-                ${!compact && tx.note ? `<span>• ${escapeHtml(tx.note)}</span>` : ''}
+                <span>·</span>
+                <span class="mono">${escapeHtml(tx.date)}</span>
+                ${!compact && tx.note ? `<span>· ${escapeHtml(tx.note)}</span>` : ''}
               </div>
             </div>
           </div>
@@ -525,10 +550,10 @@ function renderTxList(container, items, { compact = false } = {}) {
             <span class="tx-amount ${tx.type}">${sign}${formatMoney(tx.amount)}</span>
             <div class="tx-actions">
               <button class="action-icon-btn" data-edit-tx="${tx.id}" title="Edit" aria-label="Edit">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
               <button class="action-icon-btn danger" data-delete-tx="${tx.id}" title="Delete" aria-label="Delete">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
               </button>
             </div>
           </div>
@@ -569,21 +594,20 @@ function renderGoals() {
   const goals = store.state.goals;
 
   grid.innerHTML = goals
-    .map((g, idx) => {
+    .map((g) => {
       const pct = Math.min(100, Math.round((g.current / Math.max(1, g.target)) * 100));
       const complete = g.current >= g.target;
-      const color = g.color || '#10f5a0';
       return `
-        <article class="glass-card goal-card" style="--stagger: ${idx}">
+        <article class="panel goal-card">
           <div class="goal-top">
             <div class="goal-title-wrap">
-              <span class="goal-emoji">${escapeHtml(g.icon)}</span>
+              <span class="goal-icon-box">${renderIcon(g.icon, 16)}</span>
               <div>
                 <div class="goal-name">${escapeHtml(g.name)}</div>
-                <div class="card-subtitle">${complete ? escapeHtml(t('goalCompleted')) : `${formatMoney(Math.max(0, g.target - g.current))} ${escapeHtml(t('left'))}`}</div>
+                <div class="panel-subtitle mono">${complete ? escapeHtml(t('goalCompleted')) : `${formatMoney(Math.max(0, g.target - g.current))} ${escapeHtml(t('left'))}`}</div>
               </div>
             </div>
-            <span class="goal-pct-badge">${pct}%</span>
+            <span class="goal-pct-badge ${complete ? 'done' : ''}">${pct}%</span>
           </div>
 
           <div class="goal-numbers">
@@ -592,15 +616,15 @@ function renderGoals() {
           </div>
 
           <div class="progress-track">
-            <div class="progress-fill" data-target-width="${pct}%" style="background: linear-gradient(90deg, ${color}, #38bdf8)"></div>
+            <div class="progress-fill" data-target-width="${pct}%" style="background: ${complete ? 'var(--pos)' : 'var(--text-primary)'}"></div>
           </div>
 
           <div class="goal-footer">
-            <button class="primary-btn" data-contribute-goal="${g.id}" style="padding: 7px 14px; font-size: 0.8rem">
+            <button class="ghost-btn" data-contribute-goal="${g.id}">
               + ${escapeHtml(t('contribute'))}
             </button>
             <button class="action-icon-btn danger" data-delete-goal="${g.id}" title="Delete" aria-label="Delete goal">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
             </button>
           </div>
         </article>
@@ -693,26 +717,25 @@ function openTxModal(existingTx = null) {
 
   populateTxModalCategories(uiState.txModalType, existingTx?.category);
   openModal('txModal');
-  setTimeout(() => amountInput.focus(), 80);
+  setTimeout(() => amountInput.focus(), 60);
 }
 
 function openBudgetModal(categoryId) {
-  const meta = CATEGORY_MAP[categoryId];
-  document.getElementById('budgetModalTitle').textContent = `${meta?.icon || ''} ${tCat(categoryId)}`;
+  document.getElementById('budgetModalTitle').textContent = tCat(categoryId);
   document.getElementById('budgetCatInput').value = categoryId;
   document.getElementById('budgetLimitInput').value = store.state.budgets[categoryId] || 0;
   openModal('budgetModal');
-  setTimeout(() => document.getElementById('budgetLimitInput').focus(), 80);
+  setTimeout(() => document.getElementById('budgetLimitInput').focus(), 60);
 }
 
 function openContributeModal(goalId) {
   const goal = store.state.goals.find((g) => g.id === goalId);
   if (!goal) return;
-  document.getElementById('contributeModalTitle').textContent = `${goal.icon} ${goal.name}`;
+  document.getElementById('contributeModalTitle').textContent = goal.name;
   document.getElementById('contributeGoalId').value = goal.id;
   document.getElementById('contributeAmountInput').value = '';
   openModal('contributeModal');
-  setTimeout(() => document.getElementById('contributeAmountInput').focus(), 80);
+  setTimeout(() => document.getElementById('contributeAmountInput').focus(), 60);
 }
 
 function exportCsvFile() {
@@ -725,7 +748,7 @@ function exportCsvFile() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `neon-budget-${uiState.selectedMonth}.csv`;
+  a.download = `mizan-ledger-${uiState.selectedMonth}.csv`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -750,7 +773,8 @@ function init() {
     }
   );
 
-  // Navigation
+  renderGoalIconPicker();
+
   document.querySelectorAll('.nav-item').forEach((btn) => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
@@ -758,7 +782,6 @@ function init() {
     btn.addEventListener('click', () => switchView(btn.dataset.jump));
   });
 
-  // Topbar controls
   document.getElementById('monthSelect').addEventListener('change', (e) => {
     uiState.selectedMonth = e.target.value;
     renderAll();
@@ -787,14 +810,12 @@ function init() {
     }
   });
 
-  // Chart mode toggle
   document.querySelectorAll('[data-chart-mode]').forEach((btn) => {
     btn.addEventListener('click', () => {
       store.updateSettings({ chartMode: btn.dataset.chartMode });
     });
   });
 
-  // Transaction Filters
   document.getElementById('txSearch').addEventListener('input', (e) => {
     uiState.txFilters.query = e.target.value;
     renderFullTransactions();
@@ -820,7 +841,6 @@ function init() {
     renderFullTransactions();
   });
 
-  // Transaction Modal
   document.querySelectorAll('[data-tx-type]').forEach((btn) => {
     btn.addEventListener('click', () => {
       uiState.txModalType = btn.dataset.txType;
@@ -853,7 +873,6 @@ function init() {
     closeAllModals();
   });
 
-  // Budget Limit Modal
   document.getElementById('budgetForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const cat = document.getElementById('budgetCatInput').value;
@@ -863,31 +882,19 @@ function init() {
     closeAllModals();
   });
 
-  // Goal Modals
   document.getElementById('btnAddGoal').addEventListener('click', () => {
     document.getElementById('goalForm').reset();
     openModal('goalModal');
-    setTimeout(() => document.getElementById('goalNameInput').focus(), 80);
-  });
-
-  document.querySelectorAll('#goalEmojiPicker .emoji-opt').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      uiState.selectedGoalEmoji = btn.dataset.emoji;
-      document.querySelectorAll('#goalEmojiPicker .emoji-opt').forEach((b) =>
-        b.classList.toggle('active', b === btn)
-      );
-    });
+    setTimeout(() => document.getElementById('goalNameInput').focus(), 60);
   });
 
   document.getElementById('goalForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    const palette = ['#10f5a0', '#38bdf8', '#a855f7', '#fbbf24', '#fb7185'];
     store.addGoal({
       name: document.getElementById('goalNameInput').value,
       target: parseFloat(document.getElementById('goalTargetInput').value),
       current: parseFloat(document.getElementById('goalCurrentInput').value) || 0,
-      icon: uiState.selectedGoalEmoji,
-      color: palette[store.state.goals.length % palette.length],
+      icon: uiState.selectedGoalIcon,
     });
     showToast(t('toastGoalAdded'));
     closeAllModals();
@@ -899,15 +906,9 @@ function init() {
     const amt = parseFloat(document.getElementById('contributeAmountInput').value);
     const res = store.contributeGoal(id, amt);
     closeAllModals();
-    if (res?.justCompleted) {
-      launchConfetti();
-      showToast(t('toastGoalReached'));
-    } else {
-      showToast(t('toastGoalContributed'));
-    }
+    showToast(res?.justCompleted ? t('toastGoalReached') : t('toastGoalContributed'));
   });
 
-  // Close Modals
   document.querySelectorAll('[data-close-modal]').forEach((btn) => {
     btn.addEventListener('click', closeAllModals);
   });
@@ -917,7 +918,6 @@ function init() {
     });
   });
 
-  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeAllModals();

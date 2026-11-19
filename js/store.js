@@ -1,18 +1,18 @@
 export const CATEGORIES = [
   // Income
-  { id: 'salary', type: 'income', icon: '💼', color: '#10f5a0' },
-  { id: 'freelance', type: 'income', icon: '💻', color: '#38bdf8' },
-  { id: 'investment', type: 'income', icon: '📈', color: '#a855f7' },
-  { id: 'gift', type: 'income', icon: '🎁', color: '#fbbf24' },
-  // Expense
-  { id: 'housing', type: 'expense', icon: '🏠', color: '#818cf8' },
-  { id: 'food', type: 'expense', icon: '🍽️', color: '#fb7185' },
-  { id: 'transport', type: 'expense', icon: '🚗', color: '#38bdf8' },
-  { id: 'bills', type: 'expense', icon: '⚡', color: '#fbbf24' },
-  { id: 'shopping', type: 'expense', icon: '🛍️', color: '#e879f9' },
-  { id: 'health', type: 'expense', icon: '🩺', color: '#34d399' },
-  { id: 'education', type: 'expense', icon: '📚', color: '#60a5fa' },
-  { id: 'entertainment', type: 'expense', icon: '🎮', color: '#f97316' },
+  { id: 'salary', type: 'income', icon: 'salary', color: '#22c55e' },
+  { id: 'freelance', type: 'income', icon: 'freelance', color: '#38bdf8' },
+  { id: 'investment', type: 'income', icon: 'investment', color: '#a78bfa' },
+  { id: 'gift', type: 'income', icon: 'gift', color: '#eab308' },
+  // Expense (Restrained editorial data palette)
+  { id: 'housing', type: 'expense', icon: 'housing', color: '#e4e4e7' },
+  { id: 'food', type: 'expense', icon: 'food', color: '#a1a1aa' },
+  { id: 'transport', type: 'expense', icon: 'transport', color: '#60a5fa' },
+  { id: 'bills', type: 'expense', icon: 'bills', color: '#f59e0b' },
+  { id: 'shopping', type: 'expense', icon: 'shopping', color: '#c084fc' },
+  { id: 'health', type: 'expense', icon: 'health', color: '#34d399' },
+  { id: 'education', type: 'expense', icon: 'education', color: '#38bdf8' },
+  { id: 'entertainment', type: 'expense', icon: 'entertainment', color: '#fb7185' },
 ];
 
 export const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]));
@@ -112,9 +112,9 @@ export function generateDemoState(refDate = new Date()) {
       entertainment: 150,
     },
     goals: [
-      { id: 'goal-1', name: 'Sanduuqa Degdegga / Emergency Fund', target: 5000, current: 3650, icon: '🛡️', color: '#10f5a0' },
-      { id: 'goal-2', name: 'MacBook / Workstation Cusub', target: 2200, current: 1480, icon: '💻', color: '#38bdf8' },
-      { id: 'goal-3', name: 'Safar Fasax / Holiday Trip', target: 1800, current: 920, icon: '✈️', color: '#a855f7' },
+      { id: 'goal-1', name: 'Sanduuqa Degdegga / Emergency Fund', target: 5000, current: 3650, icon: 'shield', color: '#22c55e' },
+      { id: 'goal-2', name: 'Workstation Cusub', target: 2200, current: 1480, icon: 'laptop', color: '#e4e4e7' },
+      { id: 'goal-3', name: 'Safar Fasax / Travel Reserve', target: 1800, current: 920, icon: 'plane', color: '#60a5fa' },
     ],
   };
 }
@@ -227,7 +227,7 @@ export function computeCategoryBreakdown(transactions, monthKey) {
 
   return Object.entries(totals)
     .map(([categoryId, amount]) => {
-      const meta = CATEGORY_MAP[categoryId] || { id: categoryId, icon: '📌', color: '#94a3b8' };
+      const meta = CATEGORY_MAP[categoryId] || { id: categoryId, icon: 'target', color: '#71717a' };
       return {
         categoryId,
         icon: meta.icon,
@@ -309,7 +309,7 @@ export function toCsv(transactions) {
   return [header.join(','), ...rows].join('\n');
 }
 
-const STORAGE_KEY = 'neon_budget_state_v1';
+const STORAGE_KEY = 'mizan_budget_state_v2';
 
 export class BudgetStore {
   constructor(storage = typeof globalThis.localStorage !== 'undefined' ? globalThis.localStorage : null) {
@@ -412,7 +412,7 @@ export class BudgetStore {
     this.notify();
   }
 
-  addGoal({ name, target, current = 0, icon = '🎯', color = '#10f5a0' }) {
+  addGoal({ name, target, current = 0, icon = 'target', color = '#e4e4e7' }) {
     const goal = {
       id: `goal-${Date.now()}`,
       name: String(name || '').trim(),

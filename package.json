@@ -1,0 +1,12 @@
+{
+  "name": "neon-budget",
+  "version": "1.0.0",
+  "description": "Modern dark-mode personal budget app with smooth animations, interactive charts, and Somali/English support.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": ["budget", "finance", "dashboard", "charts", "dark-mode"],
+  "license": "MIT"
+}

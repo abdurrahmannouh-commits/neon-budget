@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="so" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeonBudget — Maareynta Miisaaniyadda</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2310f5a0'/%3E%3Cstop offset='100%25' stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%230b1020'/%3E%3Cpath d='M18 42 L28 24 L36 34 L46 18' stroke='url(%23g)' stroke-width='5.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='46' cy='18' r='4.5' fill='%2310f5a0'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Ambient Animated Aurora Background -->
+  <div class="aurora-bg" aria-hidden="true">
+    <div class="aurora-orb orb-1"></div>
+    <div class="aurora-orb orb-2"></div>
+    <div class="aurora-orb orb-3"></div>
+    <div class="noise-overlay"></div>
+  </div>
+
+  <div class="app-shell">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 36 36" width="24" height="24" fill="none">
+            <path d="M6 25L14 14L20 20L30 9" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="30" cy="9" r="3" fill="currentColor" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 data-i18n="appName">NeonBudget</h1>
+          <span data-i18n="appTagline">Maareynta Miisaaniyaddaada</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+          </span>
+          <span data-i18n="navDashboard">Guudmar</span>
+        </button>
+
+        <button class="nav-item" data-view="transactions">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+          </span>
+          <span data-i18n="navTransactions">Dhaqdhaqaaqa</span>
+        </button>
+
+        <button class="nav-item" data-view="budgets">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </span>
+          <span data-i18n="navBudgets">Miisaaniyadda</span>
+        </button>
+
+        <button class="nav-item" data-view="goals">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+          </span>
+          <span data-i18n="navGoals">Yoolalka</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="shortcut-card">
+          <span class="kbd">N</span>
+          <span data-i18n="shortcutHint">Riix N si aad wax ugu darto</span>
+        </div>
+
+        <div class="sidebar-controls">
+          <button id="btnExportCsv" class="ghost-btn" type="button">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span data-i18n="exportCsv">Dhoofi CSV</span>
+          </button>
+          <button id="btnResetDemo" class="ghost-btn" type="button">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            <span data-i18n="resetDemo">Dib u Celi</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="month-picker-wrap">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <select id="monthSelect" class="select-pill" aria-label="Select month"></select>
+          </div>
+
+          <select id="currencySelect" class="select-pill compact" aria-label="Select currency">
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="SOS">SOS (Sh)</option>
+          </select>
+        </div>
+
+        <div class="topbar-right">
+          <button id="btnLangToggle" class="icon-pill" type="button" title="Switch Language">
+            <span id="langLabel">SO</span>
+          </button>
+
+          <button id="btnThemeToggle" class="icon-pill" type="button" title="Toggle Dark/Light Theme" aria-label="Toggle theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+
+          <button id="btnAddTransaction" class="primary-btn" type="button">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span data-i18n="addTransaction">Ku Dar</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: DASHBOARD OVERVIEW -->
+      <section id="view-dashboard" class="view-section active">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <article class="glass-card kpi-card accent-cyan" style="--stagger: 0">
+            <div class="kpi-head">
+              <span class="kpi-label" data-i18n="totalBalance">Haraaga Guud</span>
+              <span class="kpi-badge neutral" id="kpiNetBadge">+$0</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpiBalance">$0</div>
+              <div class="kpi-spark" id="sparkBalance"></div>
+            </div>
+            <div class="kpi-foot" id="kpiBalanceSub"></div>
+          </article>
+
+          <article class="glass-card kpi-card accent-emerald" style="--stagger: 1">
+            <div class="kpi-head">
+              <span class="kpi-label" data-i18n="monthlyIncome">Dakhliga Bisha</span>
+              <span class="kpi-badge pos" id="kpiIncomeDelta">--</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpiIncome">$0</div>
+              <div class="kpi-spark" id="sparkIncome"></div>
+            </div>
+            <div class="kpi-foot" data-i18n="vsLastMonth">marka la barbardhigo bishii hore</div>
+          </article>
+
+          <article class="glass-card kpi-card accent-rose" style="--stagger: 2">
+            <div class="kpi-head">
+              <span class="kpi-label" data-i18n="monthlyExpense">Kharashka Bisha</span>
+              <span class="kpi-badge neg" id="kpiExpenseDelta">--</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpiExpense">$0</div>
+              <div class="kpi-spark" id="sparkExpense"></div>
+            </div>
+            <div class="kpi-foot" data-i18n="vsLastMonth">marka la barbardhigo bishii hore</div>
+          </article>
+
+          <article class="glass-card kpi-card accent-violet" style="--stagger: 3">
+            <div class="kpi-head">
+              <span class="kpi-label" data-i18n="savingsRate">Heerka Kaydka</span>
+              <span class="kpi-badge violet" id="kpiTxCountBadge">0 tx</span>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpiSavingsRate">0%</div>
+              <div class="savings-ring-mini" id="savingsMiniRing"></div>
+            </div>
+            <div class="kpi-foot" data-i18n="ofIncomeSaved">ee dakhliga la kaydiyay</div>
+          </article>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-grid">
+          <article class="glass-card chart-card" style="--stagger: 4">
+            <div class="card-header">
+              <div>
+                <h2 data-i18n="cashflowTitle">Socodka Lacagta (6 Bilood)</h2>
+                <p class="card-subtitle" data-i18n="cashflowSubtitle">Isbarbardhigga dakhliga iyo kharashka</p>
+              </div>
+              <div class="chart-controls">
+                <div class="legend-inline">
+                  <span><i class="dot income"></i><em data-i18n="income">Dakhli</em></span>
+                  <span><i class="dot expense"></i><em data-i18n="expense">Kharash</em></span>
+                </div>
+                <div class="segmented" role="group" aria-label="Chart mode">
+                  <button class="seg-btn active" data-chart-mode="area" data-i18n="chartModeArea">Mawjad</button>
+                  <button class="seg-btn" data-chart-mode="bar" data-i18n="chartModeBar">Tiirar</button>
+                </div>
+              </div>
+            </div>
+            <div class="canvas-stage cashflow-stage">
+              <canvas id="cashflowCanvas"></canvas>
+              <div id="cashflowTooltip" class="chart-tooltip"></div>
+            </div>
+          </article>
+
+          <article class="glass-card donut-card" style="--stagger: 5">
+            <div class="card-header">
+              <div>
+                <h2 data-i18n="spendingByCategory">Kharashka Qaybaha</h2>
+                <p class="card-subtitle" data-i18n="spendingSubtitle">Qaybsiga kharashka bishan</p>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut-wrap">
+                <canvas id="donutCanvas"></canvas>
+                <div class="donut-center" id="donutCenter">
+                  <span class="donut-center-label" data-i18n="totalSpent">Wadarta Kharashka</span>
+                  <strong class="donut-center-value" id="donutCenterValue">$0</strong>
+                  <span class="donut-center-pct" id="donutCenterPct"></span>
+                </div>
+              </div>
+              <ul class="donut-legend" id="donutLegend"></ul>
+            </div>
+          </article>
+        </div>
+
+        <!-- Insights Strip -->
+        <div class="insights-strip glass-card" style="--stagger: 6">
+          <div class="insight-item">
+            <span class="insight-icon">🔥</span>
+            <div>
+              <span class="insight-label" data-i18n="avgDailySpend">Celceliska Maalintii</span>
+              <strong id="insightDailySpend">$0</strong>
+            </div>
+          </div>
+          <div class="insight-divider"></div>
+          <div class="insight-item">
+            <span class="insight-icon">🏆</span>
+            <div>
+              <span class="insight-label" data-i18n="topCategory">Qaybta Ugu Kharashka Badan</span>
+              <strong id="insightTopCat">—</strong>
+            </div>
+          </div>
+          <div class="insight-divider"></div>
+          <div class="insight-item">
+            <span class="insight-icon">💎</span>
+            <div>
+              <span class="insight-label" data-i18n="netCashflow">Faa’iidada Bisha</span>
+              <strong id="insightNetFlow">$0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Grid: Budget Health + Recent Transactions -->
+        <div class="bottom-grid">
+          <article class="glass-card" style="--stagger: 7">
+            <div class="card-header">
+              <div>
+                <h2 data-i18n="budgetHealth">Xaaladda Miisaaniyadda</h2>
+                <p class="card-subtitle" data-i18n="budgetHealthSubtitle">La soco xadka bil kasta ee qaybaha</p>
+              </div>
+              <button class="text-link" data-jump="budgets" data-i18n="viewAll">Eeg Dhammaan</button>
+            </div>
+            <div id="dashboardBudgetsList" class="budget-bars-list"></div>
+          </article>
+
+          <article class="glass-card" style="--stagger: 8">
+            <div class="card-header">
+              <div>
+                <h2 data-i18n="recentTransactions">Dhaqdhaqaaqyadii Ugu Dambeeyay</h2>
+              </div>
+              <button class="text-link" data-jump="transactions" data-i18n="viewAll">Eeg Dhammaan</button>
+            </div>
+            <div id="recentTxList" class="tx-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- VIEW 2: ALL TRANSACTIONS -->
+      <section id="view-transactions" class="view-section">
+        <article class="glass-card">
+          <div class="card-header wrap">
+            <div>
+              <h2 data-i18n="navTransactions">Dhaqdhaqaaqa</h2>
+            </div>
+            <div class="filters-bar">
+              <div class="search-box">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="txSearch" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Raadi dhaqdhaqaaq ama qayb..." />
+              </div>
+
+              <div class="segmented" id="txTypeFilter">
+                <button class="seg-btn active" data-type="all" data-i18n="allTypes">Dhammaan</button>
+                <button class="seg-btn" data-type="income" data-i18n="income">Dakhli</button>
+                <button class="seg-btn" data-type="expense" data-i18n="expense">Kharash</button>
+              </div>
+
+              <select id="txCategoryFilter" class="select-pill"></select>
+
+              <select id="txSortSelect" class="select-pill">
+                <option value="newest" data-i18n="sortNewest">Ugu Cusub</option>
+                <option value="oldest" data-i18n="sortOldest">Ugu Horeeyay</option>
+                <option value="highest" data-i18n="sortHighest">Ugu Badan</option>
+                <option value="lowest" data-i18n="sortLowest">Ugu Yar</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="fullTxList" class="tx-list full"></div>
+        </article>
+      </section>
+
+      <!-- VIEW 3: CATEGORY BUDGETS -->
+      <section id="view-budgets" class="view-section">
+        <div class="section-banner">
+          <div>
+            <h2 data-i18n="budgetHealth">Xaaladda Miisaaniyadda</h2>
+            <p class="card-subtitle" data-i18n="budgetHealthSubtitle">La soco xadka bil kasta ee qaybaha</p>
+          </div>
+        </div>
+        <div id="fullBudgetsGrid" class="budgets-grid"></div>
+      </section>
+
+      <!-- VIEW 4: SAVINGS GOALS -->
+      <section id="view-goals" class="view-section">
+        <div class="section-banner">
+          <div>
+            <h2 data-i18n="savingsGoals">Yoolalka Kaydka</h2>
+            <p class="card-subtitle" data-i18n="savingsGoalsSubtitle">U kaydi himilooyinkaaga mustaqbalka</p>
+          </div>
+          <button id="btnAddGoal" class="primary-btn" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span data-i18n="addGoal">Yool Cusub</span>
+          </button>
+        </div>
+        <div id="goalsGrid" class="goals-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: ADD / EDIT TRANSACTION -->
+  <div id="txModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="txModalTitle">
+    <div class="modal-panel glass-card">
+      <div class="modal-header">
+        <h3 id="txModalTitle" data-i18n="modalAddTx">Dhaqdhaqaaq Cusub</h3>
+        <button class="close-btn" data-close-modal aria-label="Close">&times;</button>
+      </div>
+      <form id="txForm" class="modal-form">
+        <input type="hidden" id="txIdInput" />
+
+        <div class="type-toggle-group">
+          <button type="button" class="type-pill active expense" data-tx-type="expense" data-i18n="expense">Kharash</button>
+          <button type="button" class="type-pill income" data-tx-type="income" data-i18n="income">Dakhli</button>
+        </div>
+
+        <div class="form-row two-col">
+          <label class="field">
+            <span data-i18n="labelAmount">Qaddarka</span>
+            <input id="txAmountInput" type="number" step="0.01" min="0.01" required placeholder="0.00" />
+          </label>
+          <label class="field">
+            <span data-i18n="labelDate">Taariikhda</span>
+            <input id="txDateInput" type="date" required />
+          </label>
+        </div>
+
+        <label class="field">
+          <span data-i18n="labelTitle">Faahfaahin</span>
+          <input id="txTitleInput" type="text" required maxlength="80" data-i18n-placeholder="placeholderTitle" />
+        </label>
+
+        <label class="field">
+          <span data-i18n="labelCategory">Qaybta</span>
+          <select id="txCategoryInput" required></select>
+        </label>
+
+        <label class="field">
+          <span data-i18n="labelNote">Xusuusin (Ikhtiyaari)</span>
+          <input id="txNoteInput" type="text" maxlength="120" data-i18n-placeholder="placeholderNote" />
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal data-i18n="btnCancel">Jooji</button>
+          <button type="submit" class="primary-btn" data-i18n="btnSave">Kaydi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT BUDGET LIMIT -->
+  <div id="budgetModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-panel glass-card small">
+      <div class="modal-header">
+        <h3 id="budgetModalTitle" data-i18n="modalBudgetLimit">Deji Xadka Miisaaniyadda</h3>
+        <button class="close-btn" data-close-modal aria-label="Close">&times;</button>
+      </div>
+      <form id="budgetForm" class="modal-form">
+        <input type="hidden" id="budgetCatInput" />
+        <label class="field">
+          <span data-i18n="labelMonthlyLimit">Xadka Bisha</span>
+          <input id="budgetLimitInput" type="number" step="1" min="0" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal data-i18n="btnCancel">Jooji</button>
+          <button type="submit" class="primary-btn" data-i18n="btnSave">Kaydi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD SAVINGS GOAL -->
+  <div id="goalModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-panel glass-card small">
+      <div class="modal-header">
+        <h3 data-i18n="modalAddGoal">Abuur Yool Kayd</h3>
+        <button class="close-btn" data-close-modal aria-label="Close">&times;</button>
+      </div>
+      <form id="goalForm" class="modal-form">
+        <label class="field">
+          <span data-i18n="labelGoalName">Magaca Yoolka</span>
+          <input id="goalNameInput" type="text" required maxlength="60" data-i18n-placeholder="placeholderGoalName" />
+        </label>
+        <div class="form-row two-col">
+          <label class="field">
+            <span data-i18n="labelGoalTarget">Hadafka Guud</span>
+            <input id="goalTargetInput" type="number" step="1" min="1" required placeholder="2000" />
+          </label>
+          <label class="field">
+            <span data-i18n="labelGoalCurrent">Waxa Hadda Ku Jira</span>
+            <input id="goalCurrentInput" type="number" step="1" min="0" value="0" />
+          </label>
+        </div>
+        <label class="field">
+          <span data-i18n="labelGoalIcon">Astaanta</span>
+          <div class="emoji-picker" id="goalEmojiPicker">
+            <button type="button" class="emoji-opt active" data-emoji="🎯">🎯</button>
+            <button type="button" class="emoji-opt" data-emoji="🛡️">🛡️</button>
+            <button type="button" class="emoji-opt" data-emoji="💻">💻</button>
+            <button type="button" class="emoji-opt" data-emoji="✈️">✈️</button>
+            <button type="button" class="emoji-opt" data-emoji="🚗">🚗</button>
+            <button type="button" class="emoji-opt" data-emoji="🏡">🏡</button>
+            <button type="button" class="emoji-opt" data-emoji="🎓">🎓</button>
+            <button type="button" class="emoji-opt" data-emoji="💍">💍</button>
+          </div>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal data-i18n="btnCancel">Jooji</button>
+          <button type="submit" class="primary-btn" data-i18n="btnSave">Kaydi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONTRIBUTE TO GOAL -->
+  <div id="contributeModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-panel glass-card small">
+      <div class="modal-header">
+        <h3 id="contributeModalTitle" data-i18n="modalContribute">Lacag Ku Dar Yoolka</h3>
+        <button class="close-btn" data-close-modal aria-label="Close">&times;</button>
+      </div>
+      <form id="contributeForm" class="modal-form">
+        <input type="hidden" id="contributeGoalId" />
+        <label class="field">
+          <span data-i18n="labelAddAmount">Qaddarka Lagu Darayo</span>
+          <input id="contributeAmountInput" type="number" step="1" min="1" required placeholder="100" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal data-i18n="btnCancel">Jooji</button>
+          <button type="submit" class="primary-btn" data-i18n="btnSave">Kaydi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
